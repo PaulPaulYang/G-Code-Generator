@@ -177,6 +177,9 @@ class Application(Frame):
 
         self.CopyButton = Button(self, text='清空输出',command=self.ClearOutput)
         self.CopyButton.grid(row=10, column=3)
+
+        self.CopyButton = Button(self, text='Quit',command=self.quit)
+        self.CopyButton.grid(row=10, column=5)
    
 
     def QuitFromAxis(self):
