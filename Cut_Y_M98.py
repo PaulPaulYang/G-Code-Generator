@@ -58,7 +58,7 @@ class Application(Frame):
         self.sp1 = Label(self)
         self.sp1.grid(row=0)
         
-        self.st1 = Label(self, text='工件长度 X ')
+        self.st1 = Label(self, text='工件长度 Y ')
         self.st1.grid(row=1, column=0, sticky=E)
         self.PartLengthVar = StringVar()
         self.PartLength = Entry(self, width=10, textvariable=self.PartLengthVar)
@@ -115,10 +115,10 @@ class Application(Frame):
 
         
         self.st8 = Label(self, text='入余量 / 出余量')
-        self.st8.grid(row=5, column=2, sticky=E)
+        self.st8.grid(row=4, column=2, sticky=E)
         self.LeadinVar = StringVar()
         self.Leadin = Entry(self, width=10, textvariable=self.LeadinVar)
-        self.Leadin.grid(row=5, column=3, sticky=W)
+        self.Leadin.grid(row=4, column=3, sticky=W)
         
         self.spacer3 = Label(self, text='')
         self.spacer3.grid(row=6, column=0, columnspan=4)
@@ -198,34 +198,38 @@ class Application(Frame):
         else:
             self.LeadIn = self.ToolRadius + D('0.1')
 
-        if self.HomeLeftRightVar.get()==4:      #左边原点
-            self.X_Start = -(self.LeadIn)
-            self.X_End = self.FToD(self.PartLengthVar.get()) + self.LeadIn
-        else:                                   #右边原点
-            self.X_Start = self.LeadIn
-            self.X_End = -(self.FToD(self.PartLengthVar.get()) + self.LeadIn)
+        if self.HomeUpDownVar.get()==6:         #下边原点
+            self.Y_Start = -(self.LeadIn)
+            self.Y_End = self.FToD(self.PartLengthVar.get()) + self.LeadIn
+        else:                                   #上边原点
+            self.Y_Start = self.LeadIn
+            self.Y_End = -(self.FToD(self.PartLengthVar.get()) + self.LeadIn)
 
 
-        self.Y_Step = self.FToD(self.DepthOfCutVar.get())
-        self.Y_Start = -(self.ToolRadius - self.Y_Step)
+        self.X_Step = self.FToD(self.DepthOfCutVar.get())
 
-        self.Y_Total = self.FToD(self.TotalToRemoveVar.get())
+        if self.HomeLeftRightVar.get()==4:   #left原点
+            self.X_Start = -(self.ToolRadius - self.X_Step)
+        else:                                #right
+            self.X_Start = self.ToolRadius - self.X_Step
+
+        self.X_Total = self.FToD(self.TotalToRemoveVar.get())
         if len(self.DepthOfCutVar.get())>0:
             # self.Y_Step = self.FToD(self.DepthOfCutVar.get())
-            self.NumOfYSteps = int(self.FToD(self.TotalToRemoveVar.get()) / self.Y_Step)
-            if self.Y_Total % self.Y_Step > 0:
+            self.NumOfYSteps = int(self.FToD(self.TotalToRemoveVar.get()) / self.X_Step)
+            if self.X_Total % self.X_Step > 0:
                 self.NumOfYSteps = self.NumOfYSteps + 1
         else:
-            self.Y_Step = 0
+            self.X_Step = 0
             self.NumOfYSteps = 1
 
 
         self.Z_Position = -(self.FToD(self.PartThickVar.get()))
 
-        if self.HomeUpDownVar.get()==6:   #原点位于工件下方
-            self.Y_Position = -(self.ToolRadius)
-        else:                                #原点位于工件上方
-            self.Y_Position = self.ToolRadius
+        if self.HomeLeftRightVar.get()==4:   #原点位于工件left
+            self.X_Position = -(self.ToolRadius)
+        else:                                #原点位于工件Right
+            self.X_Position = self.ToolRadius
 
 
         # Generate the G-Codes
@@ -243,26 +247,22 @@ class Application(Frame):
         self.g_code.insert(END, 'G0 X%.4f Y%.4f\n' %(self.X_Start, self.Y_Start))
         self.g_code.insert(END, 'G1 Z%.4f\n' %(self.Z_Position))
         for i in range(self.NumOfYSteps):            
-            #self.g_code.insert(END, 'Debug Y_Total%.4f Y_Postion%.4f Y_Step%.4f\n' %(self.Y_Total, self.Y_Position, self.Y_Step))
+            # self.g_code.insert(END, 'Debug X_Total%.4f X_Postion%.4f X_Step%.4f\n' %(self.X_Total, self.X_Position, self.X_Step))
             
-            if self.HomeUpDownVar.get()==6:  #下边原点
-                if self.Y_Step>0 and (self.Y_Total-self.Y_Position) >= (self.Y_Step+self.ToolRadius):
-                    self.Y_Position = self.Y_Position + self.Y_Step
+            if self.HomeLeftRightVar.get()==4:  #left原点
+                if self.X_Step>0 and (self.X_Total-(self.ToolRadius+self.X_Position)) >= self.X_Step:
+                    self.X_Position = self.X_Position + self.X_Step
                 else:
-                    self.Y_Position = self.Y_Total-self.ToolRadius
+                    self.X_Position = self.X_Total-self.ToolRadius
 
-
-            if self.HomeUpDownVar.get()==7:  #上边原点
-                if self.Y_Step>0 and (self.Y_Total-(self.ToolRadius-self.Y_Position)) >= (self.Y_Step):
-                    self.Y_Position = self.Y_Position - self.Y_Step
+            if self.HomeLeftRightVar.get()==5:  #right原点
+                if self.X_Step>0 and (self.X_Total-(self.ToolRadius-self.X_Position)) >= self.X_Step:
+                    self.X_Position = self.X_Position - self.X_Step
                 else:
-                    self.Y_Position = self.ToolRadius - self.Y_Total
+                    self.X_Position = self.ToolRadius - self.X_Total
 
-
-            self.g_code.insert(END, 'G1 Y%.4f\n' % (self.Y_Position))
+            self.g_code.insert(END, 'G1 X%.4f\n' % (self.X_Position))
             self.g_code.insert(END, 'M98 P1107 L1\n')
-            self.X_Position = self.X_Start
-
 
         self.g_code.insert(END, 'G0 Z%s\n'  % (self.ZsafeVar.get()))
         if len(self.SpindleRPMVar.get())>0:
@@ -270,14 +270,14 @@ class Application(Frame):
         self.g_code.insert(END, 'G0 X0.0000 Y0.0000\nM30\n')
  #Begin of subprograme 
         self.g_code.insert(END, 'O1107\n')
-        self.g_code.insert(END, 'G1 X%.4f\n' % (self.X_End))
+        self.g_code.insert(END, 'G1 Y%.4f\n' % (self.Y_End))
 
         if self.HomeUpDownVar.get()==6: #原点在下方，安全移动y轴的位置为刀具直径加0.5，其实半径+0.5就可以
-            self.g_code.insert(END, 'G0 Y-%.4f\n' %(self.FToD(self.ToolDiameterVar.get())+ D('.5')))
+            self.g_code.insert(END, 'G0 X-%.4f\n' %(self.FToD(self.ToolDiameterVar.get())+ D('.5')))
         else:
-            self.g_code.insert(END, 'G0 Y%.4f\n' %(self.FToD(self.ToolDiameterVar.get())+ D('.5')))
+            self.g_code.insert(END, 'G0 X%.4f\n' %(self.FToD(self.ToolDiameterVar.get())+ D('.5')))
 
-        self.g_code.insert(END, 'G0 X%.4f\n' %(self.X_Start))
+        self.g_code.insert(END, 'G0 Y%.4f\n' %(self.Y_Start))
         self.g_code.insert(END, 'M99\nM30\n')
 
 
