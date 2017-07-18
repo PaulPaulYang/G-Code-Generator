@@ -275,7 +275,7 @@ class Application(Frame):
         self.g_code.insert(END, 'O1107\n')
         self.g_code.insert(END, 'G1 Y%.4f\n' % (self.Y_End))
 
-        if self.HomeUpDownVar.get()==6: #原点在下方，安全移动y轴的位置为刀具直径加0.5，其实半径+0.5就可以
+        if self.HomeLeftRightVar.get()==4: #left,X轴的位置为刀具直径加0.5，其实半径+0.5就可以
             self.g_code.insert(END, 'G0 X-%.4f\n' %(self.FToD(self.ToolDiameterVar.get())+ D('.5')))
         else:
             self.g_code.insert(END, 'G0 X%.4f\n' %(self.FToD(self.ToolDiameterVar.get())+ D('.5')))
